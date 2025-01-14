@@ -214,6 +214,7 @@ def send_test_email(email, name, reminder_time):
     return success, error
 
 # [Previous code remains the same until send_test_email function]
+# [Previous code remains the same until send_test_email function]
 
 # Haiku Generator
 class HaikuGenerator(ChainOfThought):
@@ -330,6 +331,65 @@ def main():
     if is_admin and len(all_tabs) > 2:
         with all_tabs[2]:
             st.header("Reminder Service")
+            
+            # Add secrets verification
+            st.subheader("Verify Configuration")
+            if st.button("Check Secrets Configuration"):
+                st.write("Checking available secrets...")
+                st.write("Available secret keys:", list(st.secrets.keys()))
+                
+                # Check specific secrets
+                required_secrets = ["GMAIL_SENDER", "GMAIL_APP_PASSWORD", "POSTGRES_URL", "GOOGLE_API_KEY"]
+                missing_secrets = [secret for secret in required_secrets if secret not in st.secrets]
+                
+                if missing_secrets:
+                    st.error(f"Missing required secrets: {', '.join(missing_secrets)}")
+                else:
+                    st.success("All required secrets are configured!")
+                    st.write(f"Gmail sender configured as: {st.secrets['GMAIL_SENDER']}")
+            
+            st.divider()
+            
+            # Email test section
+            st.subheader("Test Email Configuration")
+            test_email = st.text_input("Enter test email address")
+            if st.button("Send Test Email"):
+                if test_email:
+                    success, error = send_email(
+                        test_email,
+                        "Test Email from Remind Me!",
+                        "This is a test email to verify the email configuration is working correctly."
+                    )
+                    if success:
+                        st.success("Test email sent successfully!")
+                    else:
+                        st.error(f"Failed to send test email: {error}")
+                else:
+                    st.warning("Please enter a test email address")
+            
+            st.divider()
+            
+            # Add email test section
+            st.subheader("Test Email Configuration")
+            test_email = st.text_input("Enter test email address")
+            if st.button("Send Test Email"):
+                if test_email:
+                    success, error = send_email(
+                        test_email,
+                        "Test Email from Remind Me!",
+                        "This is a test email to verify the email configuration is working correctly."
+                    )
+                    if success:
+                        st.success("Test email sent successfully!")
+                    else:
+                        st.error(f"Failed to send test email: {error}")
+                else:
+                    st.warning("Please enter a test email address")
+            
+            st.divider()
+            
+            # Service status controls
+            st.subheader("Service Status")
             if st.button(
                 "🛑 Stop Service" if st.session_state.job_running else "▶️ Start Service"
             ):
