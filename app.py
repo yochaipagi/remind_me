@@ -212,8 +212,6 @@ def send_test_email(email, name, reminder_time):
     
     success, error = send_email(email, subject, body)
     return success, error
-
-# [Previous code remains the same until send_test_email function]
 # [Previous code remains the same until send_test_email function]
 
 # Haiku Generator
@@ -266,13 +264,14 @@ def main():
         with st.form("registration_form", clear_on_submit=True):
             col1, col2 = st.columns(2)
             with col1:
-                name = st.text_input("Your Name")
+                name = st.text_input("Your Name", key="reg_name_input")
             with col2:
-                email = st.text_input("Email Address")
+                email = st.text_input("Email Address", key="reg_email_input")
             
             reminder_time = st.time_input(
                 "When should we remind you?",
-                value=time(9, 0)
+                value=time(9, 0),
+                key="reg_time_input"
             )
             
             submitted = st.form_submit_button("Sign Up! 🎉")
@@ -334,7 +333,7 @@ def main():
             
             # Add secrets verification
             st.subheader("Verify Configuration")
-            if st.button("Check Secrets Configuration"):
+            if st.button("Check Secrets Configuration", key="check_secrets_btn"):
                 st.write("Checking available secrets...")
                 st.write("Available secret keys:", list(st.secrets.keys()))
                 
@@ -352,8 +351,8 @@ def main():
             
             # Email test section
             st.subheader("Test Email Configuration")
-            test_email = st.text_input("Enter test email address")
-            if st.button("Send Test Email"):
+            test_email = st.text_input("Enter test email address", key="test_email_input")
+            if st.button("Send Test Email", key="send_test_email_btn"):
                 if test_email:
                     success, error = send_email(
                         test_email,
@@ -368,6 +367,21 @@ def main():
                     st.warning("Please enter a test email address")
             
             st.divider()
+            
+            # Service status controls
+            st.subheader("Service Status")
+            if st.button(
+                "🛑 Stop Service" if st.session_state.job_running else "▶️ Start Service",
+                key="toggle_service_btn"
+            ):
+                st.session_state.job_running = not st.session_state.job_running
+                if st.session_state.job_running:
+                    st.write("Starting Remind Me! service...")
+                else:
+                    st.write("Stopping Remind Me! service...")
+            
+            current_status = "🟢 Active" if st.session_state.job_running else "🔴 Inactive"
+            st.write("Current Status:", current_status)
             
             # Add email test section
             st.subheader("Test Email Configuration")
