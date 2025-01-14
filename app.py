@@ -213,8 +213,134 @@ def send_test_email(email, name, reminder_time):
     success, error = send_email(email, subject, body)
     return success, error
 
-# Rest of the code remains the same...
-# (main function and Haiku generator class remain unchanged)
+# [Previous code remains the same until send_test_email function]
+
+# Haiku Generator
+class HaikuGenerator(ChainOfThought):
+    def __init__(self):
+        super().__init__()
+        self.prompt = Predict(
+            'Generate a funny and encouraging haiku about taking birth control pills. ' +
+            'Make it personal using the name {name}.'
+        )
+
+def main():
+    # App title and description
+    st.markdown('<h1 class="big-title">Remind Me! ⏰</h1>', unsafe_allow_html=True)
+    st.markdown(
+        '<p class="subtitle">Your personal birth control pill reminder assistant, '
+        'delivering daily reminders with a touch of poetry ✨</p>',
+        unsafe_allow_html=True
+    )
+    
+    # Initialize database and clients
+    if not init_db():
+        st.error("Could not initialize database. Some features may not work.")
+    
+    clients_ready, model = init_clients()
+    if not clients_ready:
+        st.warning("⚠️ App is running in limited mode. Please configure secrets to enable all features.")
+    
+    # Admin authentication in sidebar
+    st.sidebar.title("Admin Panel")
+    is_admin = check_admin_password()
+    
+    if is_admin:
+        st.sidebar.success("Admin authenticated! ✅")
+        if st.sidebar.button("Logout"):
+            st.session_state.admin_authenticated = False
+            st.rerun()
+    
+    # Determine visible tabs
+    if is_admin:
+        tabs = ["✍️ Registration", "👥 Manage Users", "⚙️ Service Status"]
+    else:
+        tabs = ["✍️ Registration"]
+    
+    all_tabs = st.tabs(tabs)
+    
+    # Registration Tab
+    with all_tabs[0]:
+        st.header("Join Remind Me!")
+        with st.form("registration_form", clear_on_submit=True):
+            col1, col2 = st.columns(2)
+            with col1:
+                name = st.text_input("Your Name")
+            with col2:
+                email = st.text_input("Email Address")
+            
+            reminder_time = st.time_input(
+                "When should we remind you?",
+                value=time(9, 0)
+            )
+            
+            submitted = st.form_submit_button("Sign Up! 🎉")
+            
+            if submitted:
+                if name and email:
+                    success, error = add_user(name, email, reminder_time)
+                    if success:
+                        st.success("Welcome to Remind Me! 🎉")
+                        
+                        # Send test email
+                        email_sent, email_error = send_test_email(email, name, reminder_time)
+                        if email_sent:
+                            st.info("📧 Check your email for a welcome message!")
+                        else:
+                            st.error(f"Could not send welcome email: {email_error}")
+                    else:
+                        st.error(error)
+                else:
+                    st.error("Please fill in all fields!")
+    
+    # Manage Users Tab (Admin only)
+    if is_admin and len(all_tabs) > 1:
+        with all_tabs[1]:
+            st.header("Community Members")
+            users = get_users()
+            if not users.empty:
+                # Style the dataframe
+                st.dataframe(
+                    users,
+                    column_config={
+                        "name": "Name",
+                        "email": "Email",
+                        "reminder_time": "Reminder Time",
+                        "active": "Active",
+                        "created_at": "Joined On"
+                    },
+                    hide_index=True
+                )
+                
+                # User management
+                st.subheader("Manage Reminders")
+                for _, user in users.iterrows():
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        st.write(f"🤗 {user['name']} ({user['email']})")
+                    with col2:
+                        button_label = "🔕 Pause" if user['active'] else "🔔 Resume"
+                        if st.button(button_label, key=f"toggle_{user['email']}"):
+                            toggle_user_status(user['email'], not user['active'])
+                            st.rerun()
+            else:
+                st.info("No members yet! Be the first to join! 🎉")
+    
+    # Service Status Tab (Admin only)
+    if is_admin and len(all_tabs) > 2:
+        with all_tabs[2]:
+            st.header("Reminder Service")
+            if st.button(
+                "🛑 Stop Service" if st.session_state.job_running else "▶️ Start Service"
+            ):
+                st.session_state.job_running = not st.session_state.job_running
+                if st.session_state.job_running:
+                    st.write("Starting Remind Me! service...")
+                else:
+                    st.write("Stopping Remind Me! service...")
+            
+            current_status = "🟢 Active" if st.session_state.job_running else "🔴 Inactive"
+            st.write("Current Status:", current_status)
 
 if __name__ == "__main__":
     main()
